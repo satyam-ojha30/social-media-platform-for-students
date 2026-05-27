@@ -5,72 +5,208 @@ import java.awt.*;
 
 public class PostPanel extends JPanel {
 
-    private JLabel likeLabel;
-    private JButton likeBtn;
+    public PostPanel(User user,
+                     Post post,
+                     Runnable refreshCallback) {
 
-    public PostPanel(User postUser, Post post, Runnable updateFeedCallback) {
-        setLayout(new BorderLayout());
-        setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-        setBackground(new Color(245, 245, 245));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
+        setLayout(new BoxLayout(this,
+                BoxLayout.Y_AXIS));
 
-        JLabel authorLabel = new JLabel(postUser.username);
-        authorLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        add(authorLabel, BorderLayout.NORTH);
+        setBackground(
+                Color.decode(user.postColor));
 
-        JTextArea contentArea = new JTextArea(post.content);
-        contentArea.setLineWrap(true);
-        contentArea.setWrapStyleWord(true);
-        contentArea.setEditable(false);
-        add(contentArea, BorderLayout.CENTER);
+        setBorder(
+                BorderFactory.createLineBorder(
+                        Color.GRAY, 2));
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // ================= TOP PANEL =================
+        JPanel topPanel =
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.LEFT));
 
-        likeBtn = new JButton();
-        likeLabel = new JLabel();
-        updateLikeButton(post);
+        topPanel.setBackground(
+                Color.decode(user.postColor));
 
-        btnPanel.add(likeBtn);
-        btnPanel.add(likeLabel);
+        // ================= PROFILE PICTURE =================
+        if (!user.profilePic.isEmpty()) {
+
+            ImageIcon profileIcon =
+                    new ImageIcon(user.profilePic);
+
+            Image img =
+                    profileIcon.getImage()
+                            .getScaledInstance(
+                                    50,
+                                    50,
+                                    Image.SCALE_SMOOTH);
+
+            JLabel picLabel =
+                    new JLabel(
+                            new ImageIcon(img));
+
+            topPanel.add(picLabel);
+        }
+
+        // ================= USERNAME =================
+        JLabel usernameLabel =
+                new JLabel(user.username);
+
+        usernameLabel.setForeground(
+                Color.decode(user.textColor));
+
+        usernameLabel.setFont(
+                new Font(
+                        user.fontStyle,
+                        Font.BOLD,
+                        18));
+
+        topPanel.add(usernameLabel);
+
+        add(topPanel);
+
+        // ================= TIME =================
+        JLabel timeLabel =
+                new JLabel(post.timestamp);
+
+        timeLabel.setForeground(Color.GRAY);
+
+        add(timeLabel);
+
+        // ================= CONTENT =================
+        JLabel contentLabel =
+                new JLabel(post.content);
+
+        contentLabel.setForeground(
+                Color.decode(user.textColor));
+
+        contentLabel.setFont(
+                new Font(
+                        user.fontStyle,
+                        Font.PLAIN,
+                        16));
+
+        add(contentLabel);
+
+        // ================= POST IMAGE =================
+        if (post.imagePath != null
+                && !post.imagePath.isEmpty()) {
+
+            ImageIcon postIcon =
+                    new ImageIcon(post.imagePath);
+
+            Image img =
+                    postIcon.getImage()
+                            .getScaledInstance(
+                                    350,
+                                    250,
+                                    Image.SCALE_SMOOTH);
+
+            JLabel imageLabel =
+                    new JLabel(
+                            new ImageIcon(img));
+
+            add(imageLabel);
+        }
+
+        // ================= LIKE PANEL =================
+        JPanel likePanel = new JPanel();
+
+        likePanel.setBackground(
+                Color.decode(user.postColor));
+
+        JLabel likeLabel =
+                new JLabel(
+                        "Likes: "
+                                + post.getLikeCount());
+
+        JButton likeBtn =
+                new JButton("Like");
+
+        likeBtn.setBackground(
+                Color.decode(user.buttonColor));
+
+        likeBtn.setForeground(Color.WHITE);
 
         likeBtn.addActionListener(e -> {
-            post.toggleLike(SocialMediaApp.currentUser.username);
-            updateLikeButton(post);
+
+            post.toggleLike(
+                    SocialMediaApp.currentUser.username);
+
+            likeLabel.setText(
+                    "Likes: "
+                            + post.getLikeCount());
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Post Liked!");
         });
 
-        if (postUser == SocialMediaApp.currentUser) {
-            JButton editBtn = new JButton("Edit");
-            JButton deleteBtn = new JButton("Delete");
+        likePanel.add(likeLabel);
 
-            btnPanel.add(editBtn);
-            btnPanel.add(deleteBtn);
+        likePanel.add(likeBtn);
 
-            editBtn.addActionListener(e -> {
-                String newContent = JOptionPane.showInputDialog(this, "Edit your post:", post.content);
-                if (newContent != null && !newContent.isEmpty()) {
-                    post.content = newContent;
-                    updateFeedCallback.run();
-                }
-            });
+        add(likePanel);
 
-            deleteBtn.addActionListener(e -> {
-                postUser.getPosts().remove(post);
-                updateFeedCallback.run();
-            });
+        // ================= COMMENTS =================
+        JTextArea commentsArea =
+                new JTextArea(5, 25);
+
+        commentsArea.setEditable(false);
+
+        commentsArea.setBackground(
+                Color.decode(user.commentColor));
+
+        commentsArea.setForeground(
+                Color.decode(user.textColor));
+
+        commentsArea.setFont(
+                new Font(
+                        user.fontStyle,
+                        Font.PLAIN,
+                        14));
+
+        for (String c : post.comments) {
+
+            commentsArea.append(c + "\n");
         }
 
-        add(btnPanel, BorderLayout.SOUTH);
-    }
+        JScrollPane commentScroll =
+                new JScrollPane(commentsArea);
 
-    private void updateLikeButton(Post post) {
-        String username = SocialMediaApp.currentUser.username;
+        add(commentScroll);
 
-        if (post.likedUsers.contains(username)) {
-            likeBtn.setText("Unlike");
-        } else {
-            likeBtn.setText("Like");
-        }
+        // ================= COMMENT BUTTON =================
+        JButton commentBtn =
+                new JButton("Add Comment");
 
-        likeLabel.setText("Likes: " + post.getLikeCount());
+        commentBtn.setBackground(
+                Color.decode(user.buttonColor));
+
+        commentBtn.setForeground(Color.WHITE);
+
+        commentBtn.addActionListener(e -> {
+
+            String comment =
+                    JOptionPane.showInputDialog(
+                            this,
+                            "Enter Comment:");
+
+            if (comment != null
+                    && !comment.trim().isEmpty()) {
+
+                post.addComment(
+                        SocialMediaApp.currentUser.username
+                                + ": " + comment);
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Comment Added!");
+
+                refreshCallback.run();
+            }
+        });
+
+        add(commentBtn);
     }
 }
